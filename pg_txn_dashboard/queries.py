@@ -66,6 +66,18 @@ RETURNING id, owner_id, asset_name, value, created_at;
 """
 
 
+TRANSACTION_INSERT_SQL = """
+INSERT INTO transactions (user_id, asset_id, amount, created_at)
+VALUES (%s, %s, %s, NOW());
+"""
+
+
+LOG_INSERT_SQL = """
+INSERT INTO logs (event, created_at)
+VALUES (%s, NOW());
+"""
+
+
 OPERATION_DETAILS = {
     "User Transaction Search": {
         "business_summary": "Find the transactions for one user and inspect the newest matching rows.",

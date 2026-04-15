@@ -34,6 +34,8 @@ st.markdown(
     """
     - Use the pages in the left sidebar to explore read queries, joins, analytics, and writes.
     - The `Database Insights` page runs `EXPLAIN ANALYZE` on the same queries used by the app.
+    - The `Storage and MVCC Evidence` page shows tuple-version changes, dead tuples, and VACUUM effects.
+    - The `Concurrency and Insert Benchmark` page demonstrates snapshot isolation and write overhead.
     - The `Admin / Setup` page can verify connectivity and create demo indexes if needed.
     """
 )
@@ -56,6 +58,17 @@ st.markdown(
       available indexes.
     - The Streamlit app is the application layer; PostgreSQL is the system that actually handles storage,
       indexing, visibility rules, WAL, and execution.
+    """
+)
+
+st.subheader("Midterm Report Coverage")
+st.markdown(
+    """
+    - Storage and MVCC: tuple-version demo with `ctid`, `xmin`, `xmax`, plus dead tuple and VACUUM evidence.
+    - Indexing: single-column and composite B-tree index behavior on `transactions`.
+    - Query planning and execution: actual `EXPLAIN ANALYZE` output for filters, joins, sorting, aggregation, and inserts.
+    - Concurrency: two-session MVCC snapshot demo showing that readers are not blocked by writers.
+    - Write overhead: rollback-based insert benchmark centered on `transactions` so you can compare heavier indexed writes against lighter inserts.
     """
 )
 
