@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  role      String   @default("analyst")
+  account   Account? @relation(fields: [accountId], references: [id])
+  accountId Int?
+}
+
+model Account {
+  id       Int     @id @default(autoincrement())
+  name     String
+  users    User[]
+  shippers Shipper[]
+}
+
+model Shipper {
+  id                 Int             @id @default(autoincrement())
+  name               String
+  industry           String
+  typicalMarginTarget Float
+  notes              String
+  account            Account?        @relation(fields: [accountId], references: [id])
+  accountId          Int?
+  commonLanes        Lane[]          @relation("ShipperLanes")
+  shipments          Shipment[]
+  historicalQuotes   HistoricalQuote[]
+}
+
+model Carrier {
+  id    Int    @id @default(autoincrement())
+  name  String
+  mode  String
+}
+
+model Lane {
+  id                Int               @id @default(autoincrement())
+  originZip         String
+  destinationZip    String
+  originMarket      String
+  destinationMarket String
+  distanceMiles     Int
+  historicalQuotes  HistoricalQuote[]
+  shippers          Shipper[]         @relation("ShipperLanes")
+}
+
+model HistoricalQuote {
+  id             Int      @id @default(autoincrement())
+  lane           Lane     @relation(fields: [laneId], references: [id])
+  laneId         Int
+  shipper        Shipper  @relation(fields: [shipperId], references: [id])
+  shipperId      Int
+  carrierCost    Float
+  sellRate       Float
+  marginDollars  Float
+  marginPercent  Float
+  createdAt      DateTime @default(now())
+}
+
+model Shipment {
+  id            Int       @id @default(autoincrement())
+  equipmentType String
+  weight        Int
+  palletCount   Int
+  pickupDate    DateTime
+  originZip     String
+  destinationZip String
+  shipper       Shipper   @relation(fields: [shipperId], references: [id])
+  shipperId     Int
+  generatedQuote GeneratedQuote?
+}
+
+model GeneratedQuote {
+  id                     Int      @id @default(autoincrement())
+  shipment               Shipment @relation(fields: [shipmentId], references: [id])
+  shipmentId             Int      @unique
+  recommendedCarrierCost Float
+  recommendedSellRate    Float
+  targetMarginPercent    Float
+  confidenceScore        Int
+  rationaleJson          String
+  createdAt              DateTime @default(now())
+}

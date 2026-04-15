@@ -1,0 +1,4 @@
+streamlit>=1.44
+psycopg[binary]>=3.1
+pandas>=2.0
+python-dotenv>=1.0

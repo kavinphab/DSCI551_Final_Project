@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+.DS_Store
+.env*
+prisma/dev.db
+.venv
+__pycache__
+.streamlit/secrets.toml
