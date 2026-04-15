@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "seed": "prisma db push && ts-node --transpile-only prisma/seed.ts"
+    "seed": "prisma db push && ts-node --transpile-only prisma/seed.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.13.0",
