@@ -1,18 +1,30 @@
 import { prisma } from '@/lib/db';
+import { getPrismaErrorMessage } from '@/lib/prisma-safe';
 
 interface PageProps {
   params: { id: string };
 }
 
+export const dynamic = 'force-dynamic';
+
 async function getShipper(id: number) {
-  return prisma.shipper.findUnique({
-    where: { id },
-    include: { commonLanes: true, historicalQuotes: { orderBy: { createdAt: 'desc' }, take: 5 }, shipments: true },
-  });
+  try {
+    const shipper = await prisma.shipper.findUnique({
+      where: { id },
+      include: { commonLanes: true, historicalQuotes: { orderBy: { createdAt: 'desc' }, take: 5 }, shipments: true },
+    });
+
+    return { shipper, error: null as string | null };
+  } catch (error) {
+    return { shipper: null, error: getPrismaErrorMessage(error) };
+  }
 }
 
 export default async function ShipperPage({ params }: PageProps) {
-  const shipper = await getShipper(Number(params.id));
+  const { shipper, error } = await getShipper(Number(params.id));
+  if (error) {
+    return <p className="py-8 text-center text-amber-700">{error}</p>;
+  }
   if (!shipper) return <p className="py-8 text-center text-slate-600">Shipper not found.</p>;
 
   return (

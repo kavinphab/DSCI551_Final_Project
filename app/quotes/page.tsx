@@ -1,15 +1,24 @@
 import { prisma } from '@/lib/db';
+import { getPrismaErrorMessage } from '@/lib/prisma-safe';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 async function getQuotes() {
-  return prisma.generatedQuote.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: { shipment: { include: { shipper: true } } },
-  });
+  try {
+    const quotes = await prisma.generatedQuote.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { shipment: { include: { shipper: true } } },
+    });
+
+    return { quotes, error: null as string | null };
+  } catch (error) {
+    return { quotes: [], error: getPrismaErrorMessage(error) };
+  }
 }
 
 export default async function QuotesPage() {
-  const quotes = await getQuotes();
+  const { quotes, error } = await getQuotes();
 
   return (
     <main className="space-y-6 py-8">
@@ -25,7 +34,10 @@ export default async function QuotesPage() {
         </div>
 
         <div className="mt-8 space-y-4">
-          {quotes.map((quote) => (
+          {error ? (
+            <p className="text-sm text-amber-700">{error}</p>
+          ) : quotes.length ? (
+            quotes.map((quote) => (
             <div key={quote.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 hover:border-brand-300">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -44,7 +56,10 @@ export default async function QuotesPage() {
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">Saved {new Date(quote.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-sm text-slate-600">No saved quotes yet.</p>
+          )}
         </div>
       </div>
     </main>

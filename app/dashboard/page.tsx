@@ -1,27 +1,46 @@
 import { prisma } from '@/lib/db';
+import { getPrismaErrorMessage } from '@/lib/prisma-safe';
 import { MetricCard } from '@/components/MetricCard';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 async function getDashboardData() {
-  const recentQuotes = await prisma.generatedQuote.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-    include: { shipment: { include: { shipper: true } } },
-  });
+  try {
+    const recentQuotes = await prisma.generatedQuote.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: { shipment: { include: { shipper: true } } },
+    });
 
-  const quoteCount = await prisma.generatedQuote.count();
-  const averageMargin = await prisma.generatedQuote.aggregate({
-    _avg: { targetMarginPercent: true },
-  });
+    const quoteCount = await prisma.generatedQuote.count();
+    const averageMargin = await prisma.generatedQuote.aggregate({
+      _avg: { targetMarginPercent: true },
+    });
 
-  const topLanes = await prisma.shipment.groupBy({
-    by: ['originZip', 'destinationZip'],
-    _count: { id: true },
-    orderBy: { _count: { id: 'desc' } },
-    take: 3,
-  });
+    const topLanes = await prisma.shipment.groupBy({
+      by: ['originZip', 'destinationZip'],
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 3,
+    });
 
-  return { recentQuotes, quoteCount, averageMargin: averageMargin._avg.targetMarginPercent ?? 17, topLanes };
+    return {
+      recentQuotes,
+      quoteCount,
+      averageMargin: averageMargin._avg.targetMarginPercent ?? 17,
+      topLanes,
+      error: null as string | null,
+    };
+  } catch (error) {
+    return {
+      recentQuotes: [],
+      quoteCount: 0,
+      averageMargin: 17,
+      topLanes: [],
+      error: getPrismaErrorMessage(error),
+    };
+  }
 }
 
 export default async function DashboardPage() {
@@ -46,7 +65,9 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-6 space-y-4">
-            {data.recentQuotes.length ? (
+            {data.error ? (
+              <p className="text-sm text-amber-700">{data.error}</p>
+            ) : data.recentQuotes.length ? (
               data.recentQuotes.map((quote) => (
                 <div key={quote.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
