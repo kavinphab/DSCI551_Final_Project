@@ -2,9 +2,14 @@ import streamlit as st
 
 from db import create_index, index_exists, test_connection
 from queries import INDEX_DEFINITIONS
+from utils import render_page_intro, render_workspace_sidebar
 
 
-st.title("Admin / Setup")
+render_workspace_sidebar()
+render_page_intro(
+    "Admin / Setup",
+    "Configure the platform, verify connectivity, and keep the recommended indexes in place so the operational and internal-analysis pages stay connected.",
+)
 st.warning("This page is for demo and setup purposes only. Do not use it as a production admin console.")
 
 st.subheader("Initial Database Setup")

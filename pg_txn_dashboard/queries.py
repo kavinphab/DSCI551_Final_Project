@@ -16,6 +16,55 @@ LIMIT %s;
 """
 
 
+USER_TRANSACTION_SQL_ASC = """
+SELECT id, user_id, asset_id, amount, created_at
+FROM transactions
+WHERE user_id = %s
+ORDER BY created_at ASC
+LIMIT %s;
+"""
+
+
+USER_TRANSACTION_JOINED_SQL = """
+SELECT
+    t.id,
+    t.user_id,
+    u.name,
+    u.email,
+    t.asset_id,
+    a.asset_name,
+    a.value AS asset_value,
+    t.amount,
+    t.created_at
+FROM transactions t
+JOIN users u ON t.user_id = u.id
+LEFT JOIN assets a ON t.asset_id = a.id
+WHERE t.user_id = %s
+ORDER BY t.created_at DESC
+LIMIT %s;
+"""
+
+
+USER_TRANSACTION_JOINED_SQL_ASC = """
+SELECT
+    t.id,
+    t.user_id,
+    u.name,
+    u.email,
+    t.asset_id,
+    a.asset_name,
+    a.value AS asset_value,
+    t.amount,
+    t.created_at
+FROM transactions t
+JOIN users u ON t.user_id = u.id
+LEFT JOIN assets a ON t.asset_id = a.id
+WHERE t.user_id = %s
+ORDER BY t.created_at ASC
+LIMIT %s;
+"""
+
+
 RECENT_ACTIVITY_SQL = """
 SELECT id, user_id, asset_id, amount, created_at
 FROM transactions
@@ -39,6 +88,20 @@ AGGREGATION_SQL = """
 SELECT user_id, COUNT(*) AS txn_count
 FROM transactions
 GROUP BY user_id
+ORDER BY txn_count DESC
+LIMIT 20;
+"""
+
+
+AGGREGATION_WITH_USER_SQL = """
+SELECT
+    t.user_id,
+    u.name,
+    u.email,
+    COUNT(*) AS txn_count
+FROM transactions t
+JOIN users u ON t.user_id = u.id
+GROUP BY t.user_id, u.name, u.email
 ORDER BY txn_count DESC
 LIMIT 20;
 """

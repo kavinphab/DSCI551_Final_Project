@@ -326,3 +326,46 @@ def explain_analyze_rolled_back(sql: str, params: Iterable[Any] | None = None) -
             result = cur.fetchone()
         conn.rollback()
     return result[0]
+
+
+def get_user_workspace_summary(user_id: int) -> dict[str, Any] | None:
+    sql = """
+    SELECT
+        u.id,
+        u.name,
+        u.email,
+        (
+            SELECT COUNT(*)
+            FROM assets a
+            WHERE a.owner_id = u.id
+        ) AS asset_count,
+        (
+            SELECT COUNT(*)
+            FROM transactions t
+            WHERE t.user_id = u.id
+        ) AS txn_count,
+        (
+            SELECT MAX(t.created_at)
+            FROM transactions t
+            WHERE t.user_id = u.id
+        ) AS last_transaction_at
+    FROM users u
+    WHERE u.id = %s;
+    """
+    return fetch_one(sql, (user_id,))
+
+
+def get_platform_overview() -> dict[str, Any]:
+    sql = """
+    SELECT
+        (SELECT COUNT(*) FROM users) AS total_users,
+        (SELECT COUNT(*) FROM assets) AS total_assets,
+        (SELECT COUNT(*) FROM transactions) AS total_transactions,
+        (SELECT COUNT(*) FROM logs) AS total_logs;
+    """
+    overview = fetch_one(sql) or {}
+    latest_txn = fetch_one("SELECT MAX(created_at) AS latest_transaction_at FROM transactions;")
+    latest_log = fetch_one("SELECT MAX(created_at) AS latest_log_at FROM logs;")
+    overview["latest_transaction_at"] = latest_txn["latest_transaction_at"] if latest_txn else None
+    overview["latest_log_at"] = latest_log["latest_log_at"] if latest_log else None
+    return overview

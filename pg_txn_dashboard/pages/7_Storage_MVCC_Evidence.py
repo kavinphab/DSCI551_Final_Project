@@ -8,15 +8,23 @@ from db import (
     run_mvcc_tuple_demo,
     vacuum_analyze_table,
 )
-from utils import render_dataframe, render_internal_note
+from utils import (
+    render_dataframe,
+    render_internal_note,
+    render_page_intro,
+    render_workspace_sidebar,
+    update_workspace_context,
+)
 
 
-st.title("Storage and MVCC Evidence")
-st.write(
-    """
-    This page turns the report's storage and MVCC claims into observable PostgreSQL evidence:
-    tuple-version changes, dead tuples, relation size growth, and the cleanup role of VACUUM.
-    """
+context = render_workspace_sidebar()
+render_page_intro(
+    "Storage and MVCC Evidence",
+    "Translate the operational workflow into physical PostgreSQL evidence: tuple versions, dead tuples, storage footprint, and VACUUM cleanup.",
+    next_steps=[
+        ("pages/8_Concurrency_and_Insert_Benchmark.py", "Run concurrency + insert tests"),
+        ("pages/9_Admin_Setup.py", "Manage indexes and setup"),
+    ],
 )
 
 st.subheader("Tuple Version Demo")
@@ -29,11 +37,12 @@ st.write(
 )
 
 with st.form("mvcc_tuple_demo_form"):
-    mvcc_user_id = st.number_input("User ID for tuple demo", min_value=1, value=1, step=1)
+    mvcc_user_id = st.number_input("User ID for tuple demo", min_value=1, value=context["active_user_id"], step=1)
     mvcc_submitted = st.form_submit_button("Run MVCC Tuple Demo")
 
 if mvcc_submitted:
     try:
+        update_workspace_context(user_id=int(mvcc_user_id))
         result = run_mvcc_tuple_demo(int(mvcc_user_id))
         if result["before"] is None:
             st.error("User not found.")
@@ -87,13 +96,14 @@ st.warning(
 )
 
 with st.form("bulk_asset_update_form"):
-    asset_start_id = st.number_input("Starting asset ID", min_value=1, value=1, step=1)
+    asset_start_id = st.number_input("Starting asset ID", min_value=1, value=context["active_asset_id"], step=1)
     asset_row_count = st.number_input("Number of asset rows to update", min_value=1, max_value=5000, value=100, step=1)
     asset_delta = st.number_input("Value increment to apply", value=1, step=1)
     bulk_update_submitted = st.form_submit_button("Run Committed Bulk UPDATE")
 
 if bulk_update_submitted:
     try:
+        update_workspace_context(asset_id=int(asset_start_id))
         outcome = run_bulk_asset_update(int(asset_start_id), int(asset_row_count), int(asset_delta))
         st.success(
             f"Updated {outcome['affected_rows']} asset rows from id {outcome['start_id']} through {outcome['end_id']}."

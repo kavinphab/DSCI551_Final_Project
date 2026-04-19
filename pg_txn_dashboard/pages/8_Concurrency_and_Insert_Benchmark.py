@@ -6,16 +6,24 @@ import streamlit as st
 from db import benchmark_insert_batches, explain_analyze_rolled_back, run_concurrent_mvcc_demo
 from plan_utils import format_plan_summary, summarize_plan
 from queries import LOG_INSERT_SQL, TRANSACTION_INSERT_SQL
-from utils import render_dataframe, render_internal_note, render_sql
+from utils import (
+    render_dataframe,
+    render_internal_note,
+    render_page_intro,
+    render_sql,
+    render_workspace_sidebar,
+    update_workspace_context,
+)
 
 
-st.title("Concurrency and Insert Benchmark")
-st.write(
-    """
-    This page fills the two biggest gaps from the midterm report: a true concurrent read/write
-    MVCC snapshot experiment and a write-overhead benchmark centered on inserts into
-    `transactions`.
-    """
+context = render_workspace_sidebar()
+render_page_intro(
+    "Concurrency and Insert Benchmark",
+    "Finish the investigation by validating snapshot isolation and measuring how much more work PostgreSQL performs for heavier transaction writes.",
+    next_steps=[
+        ("pages/6_Advanced_Database_Insights.py", "Return to query plans"),
+        ("pages/9_Admin_Setup.py", "Review setup and indexes"),
+    ],
 )
 
 st.subheader("Concurrent Read + Write MVCC Demo")
@@ -29,12 +37,13 @@ st.write(
 )
 
 with st.form("concurrency_demo_form"):
-    concurrent_user_id = st.number_input("User ID for concurrency demo", min_value=1, value=1, step=1)
-    concurrent_asset_id = st.number_input("Asset ID for inserted transaction", min_value=1, value=1, step=1)
+    concurrent_user_id = st.number_input("User ID for concurrency demo", min_value=1, value=context["active_user_id"], step=1)
+    concurrent_asset_id = st.number_input("Asset ID for inserted transaction", min_value=1, value=context["active_asset_id"], step=1)
     concurrency_submitted = st.form_submit_button("Run Concurrent Read/Write Demo")
 
 if concurrency_submitted:
     try:
+        update_workspace_context(user_id=int(concurrent_user_id), asset_id=int(concurrent_asset_id))
         result = run_concurrent_mvcc_demo(int(concurrent_user_id), int(concurrent_asset_id))
         render_dataframe(
             pd.DataFrame(
@@ -73,12 +82,13 @@ st.write(
 
 with st.form("insert_benchmark_form"):
     batch_size = st.number_input("Benchmark batch size", min_value=10, max_value=5000, value=500, step=10)
-    sample_user_id = st.number_input("Sample user ID", min_value=1, value=1, step=1)
-    sample_asset_id = st.number_input("Sample asset ID", min_value=1, value=1, step=1)
+    sample_user_id = st.number_input("Sample user ID", min_value=1, value=context["active_user_id"], step=1)
+    sample_asset_id = st.number_input("Sample asset ID", min_value=1, value=context["active_asset_id"], step=1)
     benchmark_submitted = st.form_submit_button("Run Insert Benchmark")
 
 if benchmark_submitted:
     try:
+        update_workspace_context(user_id=int(sample_user_id), asset_id=int(sample_asset_id))
         benchmark = benchmark_insert_batches(int(batch_size), int(sample_user_id), int(sample_asset_id))
         summary_df = pd.DataFrame(
             [
