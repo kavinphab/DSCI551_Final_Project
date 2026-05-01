@@ -79,6 +79,16 @@ pg_txn_dashboard/
   README.md
 ```
 
+## Code Structure
+
+- app.py → main Streamlit entry point
+- db.py → database connection and query execution
+- init_db.py → schema creation and data generation
+- plan_utils.py → EXPLAIN ANALYZE parsing
+- queries.py → reusable SQL queries
+- utils.py → helper functions
+- pages/ → individual dashboard features
+
 ## Setup
 
 1. Create and activate a Python virtual environment.
@@ -91,9 +101,16 @@ source .venv/bin/activate
 2. Install dependencies.
 
 ```bash
+cd pg_txn_dashboard
 pip install -r requirements.txt
 ```
+All dependencies are listed in `requirements.txt`.
 
+Key libraries:
+- streamlit
+- psycopg2 (or asyncpg)
+- python-dotenv
+  
 3. Configure database credentials.
 
 Option A: create a `.env` file from `.env.example` and set `DATABASE_URL`.
@@ -113,6 +130,10 @@ You can also put the same values in Streamlit secrets.
 ```bash
 python3 init_db.py
 ```
+This script:
+- Creates all required tables
+- Inserts synthetic data into users, assets, transactions, and logs
+- Simulates realistic relationships between tables
 
 This creates the required tables and populates them with ~900k sample rows. Takes 5-10 minutes.
 
@@ -121,6 +142,15 @@ This creates the required tables and populates them with ~900k sample rows. Take
 ```bash
 streamlit run app.py
 ```
+
+6. Navigate to the following pages:
+   - User Transaction Search → test indexed vs non-indexed queries
+   - Database Insights → view EXPLAIN ANALYZE output
+   - Aggregation Dashboard → observe aggregation strategies
+
+7. (Optional) Drop indexes and re-run:
+   DROP INDEX idx_transactions_user_id;
+   to observe sequential scan behavior.
 
 6. Open the local Streamlit URL shown in the terminal.
 
@@ -157,3 +187,19 @@ CREATE INDEX idx_transactions_user_created ON transactions(user_id, created_at D
 - All SQL uses parameterized placeholders.
 - The app connects directly to PostgreSQL and reads real data from the configured database.
 - `Database Insights` uses real `EXPLAIN ANALYZE` output from PostgreSQL, not guessed plans.
+
+## Environment Variables and Credentials
+
+This project requires PostgreSQL credentials.
+
+Do NOT commit credentials to GitHub.
+
+Use either:
+- a `.env` file (see `.env.example`)
+- or environment variables
+
+Required variables:
+- DATABASE_URL OR
+- PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
+
+These are loaded in `db.py`.
