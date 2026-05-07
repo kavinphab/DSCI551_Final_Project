@@ -35,10 +35,17 @@ with st.form("search_explore_transactions_form"):
     sort_order = col3.selectbox("Date order", ["Newest first", "Oldest first"], index=0)
 
     joined_view = st.toggle("Include user and asset details", value=True)
+    force_index = st.toggle("Force index usage", value=True)
     submitted = st.form_submit_button("Search Transactions")
 
 if submitted:
     update_workspace_context(user_id=int(user_id), row_limit=int(row_limit))
+
+    pre_sql = (
+        "SET enable_indexscan = on; SET enable_bitmapscan = on;"
+        if force_index
+        else "SET enable_indexscan = off; SET enable_bitmapscan = off;"
+    )
 
     if joined_view and sort_order == "Newest first":
         sql = USER_TRANSACTION_JOINED_SQL
@@ -71,11 +78,11 @@ if submitted:
         insight_label = "transaction search"
 
     try:
-        results = query_df(sql, (int(user_id), int(row_limit)))
+        results = query_df(sql, (int(user_id), int(row_limit)), pre_sql)
         st.success(f"Loaded {len(results)} transactions for user {int(user_id)}.")
         render_dataframe(results)
         with st.expander("Database Insights", expanded=False):
-            render_custom_database_insights_panel(sql, (int(user_id), int(row_limit)), explanation, insight_label)
+            render_custom_database_insights_panel(sql, (int(user_id), int(row_limit)), explanation, insight_label, pre_sql)
     except Exception as exc:
         st.error(f"Search failed: {exc}")
 

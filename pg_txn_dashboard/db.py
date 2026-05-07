@@ -54,9 +54,11 @@ def test_connection() -> tuple[bool, str]:
         return False, str(exc)
 
 
-def query_df(sql: str, params: Iterable[Any] | None = None) -> pd.DataFrame:
+def query_df(sql: str, params: Iterable[Any] | None = None, pre_sql: str | None = None) -> pd.DataFrame:
     with get_connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
+            if pre_sql:
+                cur.execute(pre_sql)
             cur.execute(sql, params or ())
             rows = cur.fetchall()
     return pd.DataFrame(rows)
@@ -79,10 +81,12 @@ def execute_write(sql: str, params: Iterable[Any] | None = None) -> tuple[list[d
     return rows, rowcount
 
 
-def explain_analyze(sql: str, params: Iterable[Any] | None = None) -> list[dict[str, Any]]:
+def explain_analyze(sql: str, params: Iterable[Any] | None = None, pre_sql: str | None = None) -> list[dict[str, Any]]:
     explain_sql = f"EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON) {sql}"
     with get_connection() as conn:
         with conn.cursor() as cur:
+            if pre_sql:
+                cur.execute(pre_sql)
             cur.execute(explain_sql, params or ())
             result = cur.fetchone()
     return result[0]

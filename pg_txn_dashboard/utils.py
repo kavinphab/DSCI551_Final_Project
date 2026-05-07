@@ -168,8 +168,8 @@ def render_database_insights_panel(operation_name: str, params: tuple, query_lab
             st.error(f"Could not load database insights: {exc}")
 
 
-def render_custom_database_insights_panel(sql: str, params: tuple, explanation: str, label: str) -> None:
-    plan_result = explain_analyze(sql, params)
+def render_custom_database_insights_panel(sql: str, params: tuple, explanation: str, label: str, pre_sql: str | None = None) -> None:
+    plan_result = explain_analyze(sql, params, pre_sql)
     summary = summarize_plan(plan_result)
 
     st.markdown("**SQL query used by this workflow**")
